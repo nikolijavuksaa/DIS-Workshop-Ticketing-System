@@ -3,3 +3,8 @@ spring:
     name: notification-service
   config:
     import: optional:configserver:http://localhost:8888
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}

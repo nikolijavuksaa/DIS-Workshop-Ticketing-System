@@ -27,6 +27,25 @@ management:
       exposure:
         include: health,info
 
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
+
+reservation:
+  events:
+    exchange: reservation.events
+
+notification:
+  reservation-events:
+    queue: notification.reservation-events
+
+identity-service:
+  url: http://localhost:8100
+
+workshop-service:
+  url: http://localhost:8200
+
 resilience4j:
   circuitbreaker:
     instances:

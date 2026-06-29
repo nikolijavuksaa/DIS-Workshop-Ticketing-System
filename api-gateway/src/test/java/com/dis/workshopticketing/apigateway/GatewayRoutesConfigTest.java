@@ -43,4 +43,17 @@ class GatewayRoutesConfigTest {
                     assertThat(route.getFilters()).isNotEmpty();
                 });
     }
+
+    @Test
+    void exposesApiNotificationsRouteToNotificationService() {
+        var routes = routeLocator.getRoutes().collectList().block();
+
+        assertThat(routes)
+                .isNotNull()
+                .anySatisfy(route -> {
+                    assertThat(route.getId()).isEqualTo("notification-service-api");
+                    assertThat(route.getUri().toString()).isEqualTo("lb://notification-service");
+                    assertThat(route.getFilters()).isNotEmpty();
+                });
+    }
 }

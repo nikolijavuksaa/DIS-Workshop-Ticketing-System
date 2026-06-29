@@ -19,6 +19,10 @@ public class GatewayRoutesConfig {
                         .path("/api/payments", "/api/payments/**")
                         .filters(filters -> filters.stripPrefix(1))
                         .uri("lb://payment-service"))
+                .route("notification-service-api", route -> route
+                        .path("/api/notifications", "/api/notifications/**")
+                        .filters(filters -> filters.stripPrefix(1))
+                        .uri("lb://notification-service"))
                 .build();
     }
 }
