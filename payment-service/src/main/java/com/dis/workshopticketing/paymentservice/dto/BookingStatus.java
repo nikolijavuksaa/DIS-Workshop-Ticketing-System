@@ -1,4 +1,4 @@
-package com.dis.workshopticketing.bookingservice.model;
+package com.dis.workshopticketing.paymentservice.dto;
 
 public enum BookingStatus {
     INITIATING,

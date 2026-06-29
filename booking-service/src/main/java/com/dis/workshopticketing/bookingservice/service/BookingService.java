@@ -9,6 +9,7 @@ import com.dis.workshopticketing.bookingservice.dto.ReservationStatus;
 import com.dis.workshopticketing.bookingservice.exception.BadRequestException;
 import com.dis.workshopticketing.bookingservice.exception.BookingCancellationException;
 import com.dis.workshopticketing.bookingservice.exception.BookingCreationException;
+import com.dis.workshopticketing.bookingservice.exception.BookingPaymentCompletionException;
 import com.dis.workshopticketing.bookingservice.exception.ResourceNotFoundException;
 import com.dis.workshopticketing.bookingservice.model.Booking;
 import com.dis.workshopticketing.bookingservice.model.BookingStatus;
@@ -74,8 +75,10 @@ public class BookingService {
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             return BookingResponse.from(booking);
         }
-        if (booking.getStatus() == BookingStatus.FAILED) {
-            throw new BadRequestException("FAILED bookings cannot be cancelled");
+        if (booking.getStatus() == BookingStatus.FAILED
+                || booking.getStatus() == BookingStatus.PAYMENT_FAILED
+                || booking.getStatus() == BookingStatus.CONFIRMED) {
+            throw new BadRequestException(booking.getStatus() + " bookings cannot be cancelled");
         }
 
         if (booking.getReservationId() != null) {
@@ -87,6 +90,38 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
+        return BookingResponse.from(bookingRepository.saveAndFlush(booking));
+    }
+
+    public BookingResponse confirmPayment(Long userId, Long id) {
+        Booking booking = findOwnedBooking(userId, id);
+        validatePendingPayment(booking);
+        validateReservationPresent(booking);
+
+        try {
+            reservationClient.confirm(booking.getReservationId());
+        } catch (RuntimeException exception) {
+            throw new BookingPaymentCompletionException(booking.getId(), "confirmation", exception);
+        }
+
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setReservationExpiresAt(null);
+        return BookingResponse.from(bookingRepository.saveAndFlush(booking));
+    }
+
+    public BookingResponse failPayment(Long userId, Long id) {
+        Booking booking = findOwnedBooking(userId, id);
+        validatePendingPayment(booking);
+        validateReservationPresent(booking);
+
+        try {
+            reservationClient.release(booking.getReservationId());
+        } catch (RuntimeException exception) {
+            throw new BookingPaymentCompletionException(booking.getId(), "failure", exception);
+        }
+
+        booking.setStatus(BookingStatus.PAYMENT_FAILED);
+        booking.setReservationExpiresAt(null);
         return BookingResponse.from(bookingRepository.saveAndFlush(booking));
     }
 
@@ -114,5 +149,17 @@ public class BookingService {
     private Booking findOwnedBooking(Long userId, Long id) {
         return bookingRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", id));
+    }
+
+    private void validatePendingPayment(Booking booking) {
+        if (booking.getStatus() != BookingStatus.PENDING_PAYMENT) {
+            throw new BadRequestException("Only PENDING_PAYMENT bookings can complete payment");
+        }
+    }
+
+    private void validateReservationPresent(Booking booking) {
+        if (booking.getReservationId() == null) {
+            throw new BadRequestException("Booking has no reservation to complete payment");
+        }
     }
 }

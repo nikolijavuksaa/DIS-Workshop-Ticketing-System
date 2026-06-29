@@ -1,6 +1,6 @@
-package com.dis.workshopticketing.bookingservice.exception;
+package com.dis.workshopticketing.paymentservice.exception;
 
-import com.dis.workshopticketing.bookingservice.dto.ErrorResponse;
+import com.dis.workshopticketing.paymentservice.dto.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,19 +16,15 @@ public class GlobalExceptionHandler {
         return new ErrorResponse(exception.getMessage());
     }
 
-    @ExceptionHandler({
-            BookingCreationException.class,
-            BookingCancellationException.class,
-            BookingPaymentCompletionException.class
-    })
-    @ResponseStatus(HttpStatus.BAD_GATEWAY)
-    ErrorResponse handleUpstreamFailure(RuntimeException exception) {
-        return new ErrorResponse(exception.getMessage());
-    }
-
     @ExceptionHandler(BadRequestException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     ErrorResponse handleBadRequest(BadRequestException exception) {
+        return new ErrorResponse(exception.getMessage());
+    }
+
+    @ExceptionHandler(PaymentProcessingException.class)
+    @ResponseStatus(HttpStatus.BAD_GATEWAY)
+    ErrorResponse handlePaymentProcessing(PaymentProcessingException exception) {
         return new ErrorResponse(exception.getMessage());
     }
 

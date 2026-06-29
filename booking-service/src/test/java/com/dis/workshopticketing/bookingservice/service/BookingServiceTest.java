@@ -5,6 +5,7 @@ import com.dis.workshopticketing.bookingservice.dto.CreateBookingRequest;
 import com.dis.workshopticketing.bookingservice.dto.CreateReservationHoldRequest;
 import com.dis.workshopticketing.bookingservice.dto.ReservationResponse;
 import com.dis.workshopticketing.bookingservice.dto.ReservationStatus;
+import com.dis.workshopticketing.bookingservice.exception.BadRequestException;
 import com.dis.workshopticketing.bookingservice.exception.BookingCreationException;
 import com.dis.workshopticketing.bookingservice.exception.ResourceNotFoundException;
 import com.dis.workshopticketing.bookingservice.model.Booking;
@@ -123,6 +124,67 @@ class BookingServiceTest {
         verify(reservationClient).release(20L);
         assertThat(response.status()).isEqualTo(BookingStatus.CANCELLED);
         assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
+    }
+
+    @Test
+    void confirmPaymentConfirmsReservationAndSetsBookingConfirmed() {
+        Booking booking = Booking.builder()
+                .id(1L)
+                .userId(7L)
+                .workshopSessionId(123L)
+                .reservationId(20L)
+                .reservationExpiresAt(LocalDateTime.now().plusMinutes(15))
+                .status(BookingStatus.PENDING_PAYMENT)
+                .build();
+
+        when(bookingRepository.findByIdAndUserId(1L, 7L)).thenReturn(Optional.of(booking));
+        stubSaveAndFlush();
+
+        var response = bookingService.confirmPayment(7L, 1L);
+
+        verify(reservationClient).confirm(20L);
+        assertThat(response.status()).isEqualTo(BookingStatus.CONFIRMED);
+        assertThat(response.reservationExpiresAt()).isNull();
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CONFIRMED);
+    }
+
+    @Test
+    void failPaymentReleasesReservationAndSetsBookingPaymentFailed() {
+        Booking booking = Booking.builder()
+                .id(1L)
+                .userId(7L)
+                .workshopSessionId(123L)
+                .reservationId(20L)
+                .reservationExpiresAt(LocalDateTime.now().plusMinutes(15))
+                .status(BookingStatus.PENDING_PAYMENT)
+                .build();
+
+        when(bookingRepository.findByIdAndUserId(1L, 7L)).thenReturn(Optional.of(booking));
+        stubSaveAndFlush();
+
+        var response = bookingService.failPayment(7L, 1L);
+
+        verify(reservationClient).release(20L);
+        assertThat(response.status()).isEqualTo(BookingStatus.PAYMENT_FAILED);
+        assertThat(response.reservationExpiresAt()).isNull();
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.PAYMENT_FAILED);
+    }
+
+    @Test
+    void confirmPaymentRejectsNonPendingPaymentBooking() {
+        Booking booking = Booking.builder()
+                .id(1L)
+                .userId(7L)
+                .workshopSessionId(123L)
+                .reservationId(20L)
+                .status(BookingStatus.WAITLISTED)
+                .build();
+
+        when(bookingRepository.findByIdAndUserId(1L, 7L)).thenReturn(Optional.of(booking));
+
+        assertThatThrownBy(() -> bookingService.confirmPayment(7L, 1L))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessage("Only PENDING_PAYMENT bookings can complete payment");
     }
 
     private void stubSaveAndFlush() {

@@ -18,4 +18,7 @@ public interface ReservationClient {
 
     @PostMapping("/reservations/{id}/release")
     ReservationResponse release(@PathVariable("id") Long id);
+
+    @PostMapping("/reservations/{id}/confirm")
+    ReservationResponse confirm(@PathVariable("id") Long id);
 }

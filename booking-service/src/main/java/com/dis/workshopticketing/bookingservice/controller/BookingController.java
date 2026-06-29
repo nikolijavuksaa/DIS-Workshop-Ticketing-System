@@ -50,6 +50,16 @@ public class BookingController {
         return bookingService.cancel(userId(jwt), id);
     }
 
+    @PostMapping("/{id}/payment-confirmed")
+    public BookingResponse confirmPayment(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return bookingService.confirmPayment(userId(jwt), id);
+    }
+
+    @PostMapping("/{id}/payment-failed")
+    public BookingResponse failPayment(@AuthenticationPrincipal Jwt jwt, @PathVariable Long id) {
+        return bookingService.failPayment(userId(jwt), id);
+    }
+
     private Long userId(Jwt jwt) {
         return Long.valueOf(jwt.getSubject());
     }
