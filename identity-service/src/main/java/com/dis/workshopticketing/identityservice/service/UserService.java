@@ -5,8 +5,10 @@ import com.dis.workshopticketing.identityservice.dto.ExistenceResponse;
 import com.dis.workshopticketing.identityservice.dto.UpdateUserRequest;
 import com.dis.workshopticketing.identityservice.dto.UserResponse;
 import com.dis.workshopticketing.identityservice.exception.ResourceNotFoundException;
+import com.dis.workshopticketing.identityservice.model.AuthProvider;
 import com.dis.workshopticketing.identityservice.model.IdentityEmailOwnerType;
 import com.dis.workshopticketing.identityservice.model.User;
+import com.dis.workshopticketing.identityservice.model.UserRole;
 import com.dis.workshopticketing.identityservice.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +34,8 @@ public class UserService {
                 .lastName(request.lastName())
                 .email(email)
                 .phone(request.phone())
+                .role(UserRole.USER)
+                .authProvider(AuthProvider.LOCAL)
                 .active(true)
                 .build();
         User savedUser = userRepository.saveAndFlush(user);

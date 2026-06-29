@@ -1,7 +1,10 @@
 package com.dis.workshopticketing.workshopservice.service;
 
+import com.dis.workshopticketing.workshopservice.client.ReservationInventoryClient;
+import com.dis.workshopticketing.workshopservice.dto.CreateReservationInventoryRequest;
 import com.dis.workshopticketing.workshopservice.dto.CreateWorkshopSessionRequest;
 import com.dis.workshopticketing.workshopservice.dto.ExistenceResponse;
+import com.dis.workshopticketing.workshopservice.dto.UpdateReservationInventoryCapacityRequest;
 import com.dis.workshopticketing.workshopservice.dto.UpdateWorkshopSessionRequest;
 import com.dis.workshopticketing.workshopservice.dto.WorkshopSessionResponse;
 import com.dis.workshopticketing.workshopservice.exception.BadRequestException;
@@ -37,6 +40,9 @@ class WorkshopSessionServiceTest {
     @Mock
     private WorkshopService workshopService;
 
+    @Mock
+    private ReservationInventoryClient reservationInventoryClient;
+
     @InjectMocks
     private WorkshopSessionService workshopSessionService;
 
@@ -47,7 +53,8 @@ class WorkshopSessionServiceTest {
                 startsAt(),
                 endsAt(),
                 "Studio 12, Belgrade",
-                new BigDecimal("3500.00")
+                new BigDecimal("3500.00"),
+                20
         );
 
         when(workshopService.findActiveWorkshop(1L)).thenReturn(workshop);
@@ -70,10 +77,12 @@ class WorkshopSessionServiceTest {
         assertThat(savedSession.getEndsAt()).isEqualTo(endsAt());
         assertThat(savedSession.getLocation()).isEqualTo("Studio 12, Belgrade");
         assertThat(savedSession.getPrice()).isEqualByComparingTo("3500.00");
+        assertThat(savedSession.getCapacity()).isEqualTo(20);
         assertThat(savedSession.isActive()).isTrue();
 
         assertThat(response.id()).isEqualTo(1L);
         assertThat(response.workshopId()).isEqualTo(1L);
+        verify(reservationInventoryClient).createInventory(new CreateReservationInventoryRequest(1L, 20));
     }
 
     @Test
@@ -82,7 +91,8 @@ class WorkshopSessionServiceTest {
                 startsAt(),
                 startsAt(),
                 "Studio 12, Belgrade",
-                new BigDecimal("3500.00")
+                new BigDecimal("3500.00"),
+                20
         );
 
         assertThatThrownBy(() -> workshopSessionService.create(1L, request))
@@ -155,7 +165,8 @@ class WorkshopSessionServiceTest {
                 startsAt().plusDays(1),
                 endsAt().plusDays(1),
                 "Studio 15, Belgrade",
-                new BigDecimal("4200.00")
+                new BigDecimal("4200.00"),
+                25
         );
 
         when(workshopSessionRepository.findByIdAndActiveTrueAndWorkshopActiveTrue(1L))
@@ -168,7 +179,9 @@ class WorkshopSessionServiceTest {
         assertThat(session.getEndsAt()).isEqualTo(endsAt().plusDays(1));
         assertThat(session.getLocation()).isEqualTo("Studio 15, Belgrade");
         assertThat(session.getPrice()).isEqualByComparingTo("4200.00");
+        assertThat(session.getCapacity()).isEqualTo(25);
         assertThat(response.location()).isEqualTo("Studio 15, Belgrade");
+        verify(reservationInventoryClient).updateCapacity(1L, new UpdateReservationInventoryCapacityRequest(25));
     }
 
     @Test
@@ -177,7 +190,8 @@ class WorkshopSessionServiceTest {
                 endsAt(),
                 startsAt(),
                 "Studio 15, Belgrade",
-                new BigDecimal("4200.00")
+                new BigDecimal("4200.00"),
+                25
         );
 
         assertThatThrownBy(() -> workshopSessionService.update(1L, request))
@@ -215,6 +229,7 @@ class WorkshopSessionServiceTest {
                 .endsAt(endsAt())
                 .location("Studio 12, Belgrade")
                 .price(new BigDecimal("3500.00"))
+                .capacity(20)
                 .active(active)
                 .build();
     }

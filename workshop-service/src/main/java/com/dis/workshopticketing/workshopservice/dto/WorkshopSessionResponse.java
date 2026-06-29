@@ -13,6 +13,7 @@ public record WorkshopSessionResponse(
         LocalDateTime endsAt,
         String location,
         BigDecimal price,
+        Integer capacity,
         boolean active,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -27,6 +28,7 @@ public record WorkshopSessionResponse(
                 session.getEndsAt(),
                 session.getLocation(),
                 session.getPrice(),
+                session.getCapacity(),
                 session.isActive(),
                 session.getCreatedAt(),
                 session.getUpdatedAt()

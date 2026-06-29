@@ -3,3 +3,15 @@ spring:
     name: reservation-service
   config:
     import: optional:configserver:http://localhost:8888
+
+reservation:
+  hold-duration-minutes: 10
+  expiration-check-interval-ms: 30000
+  outbox-publish-interval-ms: 5000
+  events:
+    exchange: reservation.events
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}

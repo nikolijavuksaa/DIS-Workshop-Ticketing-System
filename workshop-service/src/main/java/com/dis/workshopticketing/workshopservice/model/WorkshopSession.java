@@ -49,6 +49,9 @@ public class WorkshopSession {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
 
+    @Column(nullable = false)
+    private Integer capacity;
+
     @Builder.Default
     @Column(nullable = false)
     private boolean active = true;

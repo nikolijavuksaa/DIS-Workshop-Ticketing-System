@@ -2,6 +2,8 @@ package com.dis.workshopticketing.identityservice.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -39,6 +41,18 @@ public class User {
     private String email;
 
     private String phone;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.USER;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    private String providerId;
 
     @Builder.Default
     @Column(nullable = false)

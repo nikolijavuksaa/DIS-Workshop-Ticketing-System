@@ -1,7 +1,10 @@
 package com.dis.workshopticketing.workshopservice.service;
 
+import com.dis.workshopticketing.workshopservice.client.ReservationInventoryClient;
+import com.dis.workshopticketing.workshopservice.dto.CreateReservationInventoryRequest;
 import com.dis.workshopticketing.workshopservice.dto.CreateWorkshopSessionRequest;
 import com.dis.workshopticketing.workshopservice.dto.ExistenceResponse;
+import com.dis.workshopticketing.workshopservice.dto.UpdateReservationInventoryCapacityRequest;
 import com.dis.workshopticketing.workshopservice.dto.UpdateWorkshopSessionRequest;
 import com.dis.workshopticketing.workshopservice.dto.WorkshopSessionResponse;
 import com.dis.workshopticketing.workshopservice.exception.BadRequestException;
@@ -19,13 +22,16 @@ public class WorkshopSessionService {
 
     private final WorkshopSessionRepository workshopSessionRepository;
     private final WorkshopService workshopService;
+    private final ReservationInventoryClient reservationInventoryClient;
 
     public WorkshopSessionService(
             WorkshopSessionRepository workshopSessionRepository,
-            WorkshopService workshopService
+            WorkshopService workshopService,
+            ReservationInventoryClient reservationInventoryClient
     ) {
         this.workshopSessionRepository = workshopSessionRepository;
         this.workshopService = workshopService;
+        this.reservationInventoryClient = reservationInventoryClient;
     }
 
     @Transactional
@@ -39,10 +45,17 @@ public class WorkshopSessionService {
                 .endsAt(request.endsAt())
                 .location(request.location())
                 .price(request.price())
+                .capacity(request.capacity())
                 .active(true)
                 .build();
 
-        return WorkshopSessionResponse.from(workshopSessionRepository.saveAndFlush(session));
+        WorkshopSession savedSession = workshopSessionRepository.saveAndFlush(session);
+        reservationInventoryClient.createInventory(new CreateReservationInventoryRequest(
+                savedSession.getId(),
+                savedSession.getCapacity()
+        ));
+
+        return WorkshopSessionResponse.from(savedSession);
     }
 
     @Transactional(readOnly = true)
@@ -77,8 +90,15 @@ public class WorkshopSessionService {
         session.setEndsAt(request.endsAt());
         session.setLocation(request.location());
         session.setPrice(request.price());
+        session.setCapacity(request.capacity());
 
-        return WorkshopSessionResponse.from(workshopSessionRepository.saveAndFlush(session));
+        WorkshopSession savedSession = workshopSessionRepository.saveAndFlush(session);
+        reservationInventoryClient.updateCapacity(
+                savedSession.getId(),
+                new UpdateReservationInventoryCapacityRequest(savedSession.getCapacity())
+        );
+
+        return WorkshopSessionResponse.from(savedSession);
     }
 
     @Transactional
