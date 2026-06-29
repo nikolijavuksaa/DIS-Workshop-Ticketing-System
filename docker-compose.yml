@@ -1,0 +1,228 @@
+x-service-env: &service-env
+  CONFIG_SERVER_URL: http://config-server:8888
+  JWT_SECRET: change-me-change-me-change-me-change-me
+  EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+  EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+  MYSQL_HOST: mysql
+  MYSQL_PORT: 3306
+  MYSQL_USERNAME: root
+  MYSQL_PASSWORD: root
+  RABBIT_HOST: rabbitmq
+  RABBIT_PORT: 5672
+  RABBIT_USERNAME: guest
+  RABBIT_PASSWORD: guest
+  IDENTITY_SERVICE_URL: http://identity-service:8100
+  WORKSHOP_SERVICE_URL: http://workshop-service:8200
+  RESERVATION_SERVICE_URL: http://reservation-service:8300
+  BOOKING_SERVICE_URL: http://booking-service:8400
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: workshop-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -proot --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: workshop-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  discovery-server:
+    build:
+      context: ./discovery-server
+    container_name: workshop-discovery-server
+    ports:
+      - "8761:8761"
+
+  config-server:
+    build:
+      context: ./config-server
+    container_name: workshop-config-server
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USERNAME: root
+      MYSQL_PASSWORD: root
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: guest
+      RABBIT_PASSWORD: guest
+      IDENTITY_SERVICE_URL: http://identity-service:8100
+      WORKSHOP_SERVICE_URL: http://workshop-service:8200
+      RESERVATION_SERVICE_URL: http://reservation-service:8300
+      BOOKING_SERVICE_URL: http://booking-service:8400
+    ports:
+      - "8888:8888"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+
+  identity-service:
+    build:
+      context: ./identity-service
+    container_name: workshop-identity-service
+    environment:
+      <<: *service-env
+      OAUTH2_SUCCESS_REDIRECT_URL: http://localhost:3000/oauth2/success
+    ports:
+      - "8100:8100"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  workshop-service:
+    build:
+      context: ./workshop-service
+    container_name: workshop-workshop-service
+    environment:
+      <<: *service-env
+    ports:
+      - "8200:8200"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      reservation-service:
+        condition: service_healthy
+
+  reservation-service:
+    build:
+      context: ./reservation-service
+    container_name: workshop-reservation-service
+    environment:
+      <<: *service-env
+    ports:
+      - "8300:8300"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+
+  booking-service:
+    build:
+      context: ./booking-service
+    container_name: workshop-booking-service
+    environment:
+      <<: *service-env
+    ports:
+      - "8400:8400"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      reservation-service:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: workshop-payment-service
+    environment:
+      <<: *service-env
+    ports:
+      - "8500:8500"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: workshop-notification-service
+    environment:
+      <<: *service-env
+    ports:
+      - "8600:8600"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      workshop-service:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: workshop-api-gateway
+    environment:
+      JWT_SECRET: change-me-change-me-change-me-change-me
+      EUREKA_DEFAULT_ZONE: http://discovery-server:8761/eureka/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    ports:
+      - "8080:8080"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      identity-service:
+        condition: service_healthy
+      workshop-service:
+        condition: service_healthy
+      reservation-service:
+        condition: service_healthy
+      booking-service:
+        condition: service_healthy
+      payment-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
