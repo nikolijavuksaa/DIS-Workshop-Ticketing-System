@@ -10,7 +10,8 @@ import org.springframework.context.annotation.Import;
         "spring.cloud.config.enabled=false",
         "eureka.client.enabled=false",
         "spring.cloud.discovery.enabled=false",
-        "spring.cloud.service-registry.auto-registration.enabled=false"
+        "spring.cloud.service-registry.auto-registration.enabled=false",
+        "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class ReservationServiceApplicationIT {
 
