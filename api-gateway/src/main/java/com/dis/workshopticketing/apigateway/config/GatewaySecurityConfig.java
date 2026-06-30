@@ -24,6 +24,7 @@ public class GatewaySecurityConfig {
                 .authorizeExchange(authorize -> authorize
                         .pathMatchers(
                                 "/actuator/health",
+                                "/actuator/prometheus",
                                 "/identity-service/oauth2/**",
                                 "/identity-service/login/oauth2/**",
                                 "/identity-service/users/*/exists",

@@ -48,6 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.datasource.url=jdbc:h2:mem:identity_controller_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.jpa.hibernate.ddl-auto=create-drop",
+        "management.endpoints.web.exposure.include=health,prometheus",
         "app.security.jwt.secret=change-me-change-me-change-me-change-me"
 })
 @AutoConfigureMockMvc
@@ -73,6 +74,12 @@ class IdentityControllerSecurityTest {
     @Test
     void keepsHealthEndpointPublic() throws Exception {
         mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void keepsPrometheusEndpointPublic() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
                 .andExpect(status().isOk());
     }
 

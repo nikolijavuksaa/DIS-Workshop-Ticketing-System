@@ -48,6 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "spring.rabbitmq.listener.simple.auto-startup=false",
         "spring.rabbitmq.listener.direct.auto-startup=false",
         "management.health.rabbit.enabled=false",
+        "management.endpoints.web.exposure.include=health,prometheus",
         "app.security.jwt.secret=change-me-change-me-change-me-change-me"
 })
 @AutoConfigureMockMvc
@@ -74,6 +75,12 @@ class PaymentControllerSecurityTest {
     @Test
     void keepsHealthEndpointPublic() throws Exception {
         mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void keepsPrometheusEndpointPublic() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
                 .andExpect(status().isOk());
     }
 

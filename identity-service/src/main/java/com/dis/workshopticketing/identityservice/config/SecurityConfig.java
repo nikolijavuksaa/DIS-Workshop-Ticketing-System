@@ -23,6 +23,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(
                                 "/actuator/health",
+                                "/actuator/prometheus",
                                 "/oauth2/**",
                                 "/login/oauth2/**",
                                 "/users/*/exists",
